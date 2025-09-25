@@ -9,26 +9,26 @@ Accelerating QMCpy Notebook Tests with Parsl
 
 \subsection{Introduction}
 
- This blog provides a summary of the speedup of notebook regression testing presented in our talk at ParslFest [1] %, sponsored by Globus Compute, 
- and highlights the subsequent directions of the work. Regression testing of notebooks is massively parallel and resource-intensive.
+ This blog provides a summary of the speedup of notebook regression testing presented in our talk at ParslFest \cite{parslfest2025} 
+ and highlights the subsequent directions of the work. Regression testing of notebooks for QMCPy \cite{QMCPy2020a} is massively parallel and resource-intensive.
 
 \subsection{Methodology}
 
- Choosing Testbook \cite{} was primarily motivated by the usability of actually writing a test (one that would even execute the notebook itself). It also fits well with our tests in a separate directory, where we have already implemented other tests without requiring execution of the full notebooks for clarity. Then we made a test harness that we could also have Parsl [2] execute our testbook unittests since it is embarrassingly parallel.
+ Choosing Testbook \cite{testbook2021} was primarily motivated by the usability of actually writing a test (one that would even execute the notebook itself). It also fits well with our tests in a separate directory, where we have already implemented other tests without requiring execution of the full notebooks for clarity. Then we made a test harness that we could also have Parsl \cite{parsl2019} execute our testbook unittests since it is embarrassingly parallel.
 
 \subsection{Results}
 
 To determine a baseline speedup with a subset of notebooks, we saw a speedup. 
-After increasing our test coverage, which expanded our work to look for syntax errors in more notebooks, we now see a 4.4x speedup, which is consistent with our expectations. 
+After increasing our test coverage, which expanded our work to look for syntax errors in more notebooks, we now see a 4.4x speedup, which is consistent with our expectations, as shown in Figure~\ref{fig:parsl_speedup}. 
 
-\begin{center}
-%\begin{minipage}{0.7\textwidth}
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=.7\textwidth]{booktests/parsl_speedup_chart_no_x_lines.png}
-    \captionof{figure}{Parallel testing speedup using Parsl against sequential execution of tests.}
+    \caption{Parallel testing speedup using Parsl against sequential execution of tests.}
     \label{fig:parsl_speedup}
-%\end{minipage}
-\end{center}
+\end{figure}
+
+\scnote{Add details about architecture where the speedup were observed.}
 
 \subsection{Further Work}
 
@@ -37,45 +37,16 @@ Due to the above results, this points to the fact that we should extend our test
 Now, since many people have multi-core processors, we can make our individuals more productive so that our tests can show that no regressions have been introduced faster.
 
 Last but not least of the feedback on the presentation of this work to the Parsl group would be that the system is very general. This implies that a distributed test system could be interesting for Parsl users to distribute their own test workloads. 
-Also, extending our work to not just test Jupyter notebooks, but also Python-based doctests, adding new testing such as Behavior-Driven Development using Cucumber, unit testing using pytest and/or unittest.
+Also, extending our work to not just test Jupyter notebooks, but also Python-based doctests, adding new testing such as Behavior-Driven Development using Cucumber \cite{cucumber2025}, unit testing using pytest and/or unittest.
 
-\scnote{
-\begin{enumerate}
-    \item Add citation for `testbook`
-    
-     \item All references and figures need to be referenced in the text. In particular, Figure 5 and reference [3] require in-text citations.
-    
-     \item How to apply ``Cucumber tests for Behavior-Driven Development'' in QMCPy?
+\scnote{How to apply ``Cucumber tests for Behavior-Driven Development'' in QMCPy?}
 
-     \item Add a link to the presentation slides and notebooks
+\scnote{Add a link to the presentation slides and notebooks}
 
-    \item add make testbook and add to readme on running juypter notebook tests
+\scnote{add make testbook and add to readme on running juypter notebook tests}
 
-    \item workflow fixing to github actions ask IIT person presentation
-    \item alexander culler ( german) lookup nvidia mental images , art owen 
+\scnote{workflow fixing to github actions ask IIT person presentation}
 
-    \item Add details about architecture where the speedup were observed.
-    
-\end{enumerate}
-}
+\scnote{alexander culler ( german) lookup nvidia mental images , art owen}
 
-\begin{thebibliography}{6}
-
-\bibitem[1]{parslfest2025}
-Parsl Project. 2025. Globus Compute + ParslFest 2025: Annual Community Gathering (Hybrid), August 28-29, University of Chicago. https://parsl-project.org/parslfest/parslfest2025.html
-
-\bibitem[2]{parsl2019}
-Yadu Babuji, Anna Woodard, Zhuozhao Li, Daniel S. Katz, Ben Clifford, Rohan Kumar, Luksaz Lacinski, Ryan Chard, Justin M. Wozniak, Ian Foster, Michael Wilde and Kyle Chard. Parsl: Pervasive Parallel Programming in Python." 28th ACM International Symposium on High-Performance Parallel and Distributed Computing (HPDC). 2019. 10.1145/3307681.3325400
-
-\bibitem[3]{qmcpy2023}
-Choi, S.-C. T., Hickernell, F. J., Jagadeeswaran, R., McCourt, M. J., \& Sorokin, A. G. (2020--2025).
-QMCPy: A quasi-Monte Carlo Python Library (Version 2.1).
-DOI: \url{https:/doi.org/10.5281/zenodo.16822646}. 
-Retrieved from \url{https:/www.qmcpy.org}.
-
-\bibitem[4]{nteract contributors. 2021. testbook: unit testing framework for Jupyter notebooks. version 0.4.2. (2021). https://github.com/nteract/testbook. Accessed: Sept. 23, 2025.}
-
-\bibitem[5]{Cucumber. Cucumber: Write automated tests in plain language. https://cucumber.io (accessed Sept. 25, 2025).}
-
-\end{thebibliography}
 
