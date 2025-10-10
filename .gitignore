@@ -6,3 +6,15 @@
 **.log
 **.fdb_latexmk
 **.pdf
+*.blg
+*.xml
+*.toc
+*.bcf
+*.bbl
+*.json
+.vscode/*
+
+
+sc/
+sc_*
+tmp*
