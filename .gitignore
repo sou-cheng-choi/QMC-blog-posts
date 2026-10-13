@@ -13,7 +13,7 @@
 *.bbl
 *.json
 .vscode/*
-
+*.pyc
 
 sc/
 sc_*
