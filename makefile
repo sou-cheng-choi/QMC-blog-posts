@@ -4,14 +4,28 @@ MAIN = QMC_Blog_Posts.tex
 BASENAME = QMC_Blog_Posts
 PDF = QMC_Blog_Posts.pdf
 TEXS := $(shell find . -type f -name '*.tex' -not -path './.git/*')
+# Keep pdfLaTeX and Biber in the same TeX Live installation.
+TEXBIN ?= $(patsubst %/,%,$(dir $(shell command -v biber 2>/dev/null)))
+PDFLATEX ?= $(if $(TEXBIN),$(TEXBIN)/pdflatex,pdflatex)
+BIBER ?= $(if $(TEXBIN),$(TEXBIN)/biber,biber)
 
-.PHONY: all clean view force rebuild
+.PHONY: all pdf clean view force rebuild
+
+all: pdf
 
 pdf: $(TEXS) clean
-	pdflatex $(MAIN)
-	biber $(BASENAME)
-	pdflatex -interaction=nonstopmode -halt-on-error $(MAIN)
-	pdflatex -interaction=nonstopmode -halt-on-error $(MAIN)
+	$(PDFLATEX) -interaction=nonstopmode -halt-on-error $(MAIN)
+	@if [ "$$(uname -s)" = Darwin ] && file "$(BIBER)" | grep -q 'universal binary'; then \
+		thin_biber=$$(mktemp /tmp/qmc-biber.XXXXXX); \
+		trap 'rm -f "$$thin_biber"' EXIT; \
+		lipo "$(BIBER)" -thin "$$(uname -m)" -output "$$thin_biber"; \
+		chmod +x "$$thin_biber"; \
+		"$$thin_biber" $(BASENAME); \
+	else \
+		"$(BIBER)" $(BASENAME); \
+	fi
+	$(PDFLATEX) -interaction=nonstopmode -halt-on-error $(MAIN)
+	$(PDFLATEX) -interaction=nonstopmode -halt-on-error $(MAIN)
 
 force:
 	rm -f $(PDF)
