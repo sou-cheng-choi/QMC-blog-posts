@@ -11,7 +11,8 @@ import qmcpy as qp
 n, D = 512, 3
 cube_points = qp.Sobol(dimension=D, seed=7).gen_samples(n)
 normalized = cube_points / cube_points.sum(axis=1, keepdims=True)
-w = qp.SimplexUniform.transform_points(cube_points[..., :D - 1], transform_method="root")
+w = qp.SimplexUniform.transform_points(
+    cube_points[..., :D - 1], transform_method="root")
 p = np.concatenate([w, 1 - w.sum(axis=-1, keepdims=True)], axis=-1)
 
 # --- plotting ---
