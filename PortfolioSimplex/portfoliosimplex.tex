@@ -12,7 +12,7 @@ p_i\geq 0,\ \sum_{i=1}^D p_i=1\right\}.
 Here is the tempting shortcut: draw $D$ independent
 Uniform$(0,1)$ values and divide them by their sum.  This lands on
 $\Delta_{D-1}$, but it is not uniform there: it puts too much mass near the
-centroid and too little near the vertices~\cite{devroye1986,smithtromble2004}.
+centroid and too little near the vertices~\cite{smithtromble2004}.
 The bias is specific to normalized uniform draws.  For quasi-Monte Carlo
 (QMC) sampling, this construction also spends $D$ cube coordinates on a
 $(D-1)$-dimensional target.
@@ -38,7 +38,7 @@ for $D$ portfolio weights needs only $D-1$ cube coordinates.
 The public \code{transform\_points} method makes the transformation explicit
 and lets several methods use the same pre-generated cube points:
 
-\lstinputlisting[style=Python, firstline=9, lastline=15]{PortfolioSimplex/code/simplex_bias.py}
+\lstinputlisting[style=Python, keywordstyle={[2]\color{teal}}, keepspaces=true, firstline=9, lastline=16]{PortfolioSimplex/code/simplex_bias.py}
 
 \begin{figure}[H]
 \centering
@@ -51,8 +51,9 @@ produces uniform simplex weights, including the implicit third weight.}
 
 \paragraph{Five maps to a uniform simplex.}
 Internally, \code{SimplexUniform} first maps $[0,1]^{D-1}$ to the ordered simplex
-$T_{D-1}=\{0\leq x_1\leq\cdots\leq x_{D-1}\leq1\}$, then converts the ordered
-coordinates to the full probability-simplex weights,
+$T_{D-1}=\{0\leq x_1\leq\cdots\leq x_{D-1}\leq1\}$.  By default, it then
+takes consecutive differences, returning the first $D-1$ weights; the user
+appends the implicit last weight:
 \[
 p_1=x_1,\qquad p_i=x_i-x_{i-1}\ (2\leq i\leq D-1),\qquad
 p_D=1-x_{D-1}.
@@ -66,7 +67,8 @@ constructs its higher-dimensional version through an intermediate corner
 simplex.  QMCPy's \code{shift} uses the later construction in every dimension,
 including two, so it is not pointwise identical to the original 2D map.
 \code{mirror} is
-implemented only for input dimensions of at most 3.
+implemented only for input dimensions of at most 3 (portfolios of at most
+4 assets).
 The \code{sort}, \code{origami}, and \code{mirror} maps are not injective, so
 different cube points may have the same image.  QMCPy retains every occurrence
 as a multiset (a collection that keeps duplicates): each still carries its
@@ -103,8 +105,9 @@ directly in $D-1$ dimensions.
 Candidate weights are scored with a conventional constant-weight objective:
 asset log returns derived from the saved price data are converted to simple
 returns before computing the portfolio mean and covariance.  A date-matched annual log risk-free rate,
-when used, is converted to a daily simple return before subtraction.  This
-selection Sharpe ratio answers a different question from the realized
+when used, is converted to a daily simple return before subtraction.  The
+Sharpe ratio is the mean excess return divided by its standard deviation,
+annualized.  This selection score answers a different question from the realized
 strategy: the in-sample backtest rebalances quarterly, while the out-of-sample
 backtest buys and holds, so their weights drift between trades.
 
@@ -112,10 +115,11 @@ The answer is more interesting than a simple leaderboard.  With 32,768
 candidate portfolios, the best medium-risk score changes with the asset
 universe and the risk-free-rate choice.  For 40 tickers, the seven mean
 Sharpe ratios range from 1.269 to 1.277 without the risk-free rate and from
-1.170 to 1.179 with it; their standard errors are 0.002--0.004.  Thus IID is
-competitive and sometimes best, but the differences are small relative to
-the reported replication uncertainty.  The useful lesson lies in the comparison itself: use the same simplex
-law and candidate count, and report variation across randomizations.  The
+1.170 to 1.179 with it; their standard errors are 0.002--0.004.  These ranges
+are about 2.5 and 2.7 times the average reported standard error, respectively.
+IID is competitive and sometimes best, but these summaries alone do not
+establish a reliable ranking.  The useful lesson lies in the comparison itself: use the same simplex
+transform and candidate count, and report variation across randomizations.  The
 out-of-sample dollar results are also mixed.  That table reports replication
 means without standard errors, so it is descriptive and does not establish a
 sampler-specific investment edge.
