@@ -11,9 +11,7 @@ p_i\geq 0,\ \sum_{i=1}^D p_i=1\right\}.
 \]
 Here is the tempting shortcut: draw $D$ independent
 Uniform$(0,1)$ values and divide them by their sum.  This lands on
-$\Delta_{D-1}$, but it is not uniform there: it puts too much mass near the
-centroid and too little near the vertices~\cite{smithtromble2004}.
-The bias is specific to normalized uniform draws.  For quasi-Monte Carlo
+$\Delta_{D-1}$, but the distribution is biased. Specifically, it oversamples the centroid and undersamples the vertices~\cite{smithtromble2004}. For quasi-Monte Carlo
 (QMC) sampling, this construction also spends $D$ cube coordinates on a
 $(D-1)$-dimensional target.
 
@@ -135,7 +133,7 @@ eligible target mass remains.  The reported data have complete price histories
 and use no stop loss, so none of these safeguards fires in the demo.  The rules
 prevent missing prices or a rebalance boundary from creating or destroying wealth.
 
-The experiment leaves us with a useful question instead of a slogan: when
+The experiment leaves us with a question: when
 does the structure of an LD sequence survive a simplex transform strongly
 enough to improve the search?  The demos make that
 question easier to explore.  They illustrate simplex sampling,
