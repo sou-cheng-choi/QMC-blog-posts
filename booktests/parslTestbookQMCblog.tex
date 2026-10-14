@@ -1,6 +1,6 @@
 \begin{comment}
 \title{parslTestbookQMCblog}
-\author{Dr. Sou-Cheng Choi, Illinois Tech and SouLab, Joshua Jay Herman (QMC Development Team)}
+\author{Joshua Jay Herman (QMC Development Team),  Brandon Sharp, and Sou-Cheng Choi (Illinois Tech and SouLab LLC)}
 \date{September 2025}
 
 \maketitle
@@ -9,44 +9,175 @@ Accelerating QMCpy Notebook Tests with Parsl
 
 \subsection{Introduction}
 
- This blog provides a summary of the speedup of notebook regression testing presented in our talk at ParslFest \cite{parslfest2025} 
- and highlights the subsequent directions of the work. Regression testing of notebooks for QMCPy \cite{QMCPy2020a} is massively parallel and resource-intensive.
+Notebook regression testing \scnote{is it regression testing or unit testing?} ensures that interactive examples and analyses
+remain correct and reproducible, catching regressions introduced by changes in
+code, dependencies, or execution environments. For QMCPy \cite{QMCPy2020a}, this
+process is both massively parallel and resource-intensive due to the number and
+complexity of its notebooks.
+
+This blog post summarizes our work on accelerating notebook regression testing
+(using Testbook-based tests, which can be viewed as notebook-level unit tests)
+as presented in our ParslFest 2025 talk \cite{parslfest2025}, and outlines
+directions for further development.
+
+The slides accompanying the presentation are available at:
+\href{https://github.com/QMCSoftware/QMCSoftware/raw/refs/heads/parsl_presentation/demos/talk_paper_demos/Parslfest_2025/Parsl%20Testbook%20Speedup.pptx}{Parsl Testbook Speedup}.
+\scnote{Link broken.}
 
 \subsection{Methodology}
 
- Choosing Testbook \cite{testbook2021} was primarily motivated by the usability of actually writing a test (one that would even execute the notebook itself). It also fits well with our tests in a separate directory, where we have already implemented other tests without requiring execution of the full notebooks for clarity. Then we made a test harness that we could also have Parsl \cite{parsl2019} execute our testbook unittests since it is embarrassingly parallel.
+Our choice to adopt Testbook \cite{testbook2021} is motivated by its ability to
+execute Jupyter notebooks directly within a test environment, enabling
+fine-grained validation of both code cells and notebook state. Testbook also
+integrates cleanly with our existing testing directory structure, where other
+unit tests are organized without requiring full notebook execution. This
+preserves modularity, simplifies debugging, and avoids unnecessary duplication
+of logic.
+
+To support scalable notebook testing, we developed a lightweight yet flexible
+test harness that enables Parsl \cite{parsl2019} to orchestrate Testbook-based
+unit tests. By treating each notebook test as an independent Parsl app, the
+harness realizes an embarrassingly parallel workflow suitable for local
+multiprocessing, HPC schedulers, or cloud environments.
+
+The harness coordinates three primary components to achieve reproducible,
+high-throughput notebook testing:
+
+\begin{itemize}
+    \item \textbf{Continuous Integration (CI):} A GitHub Actions workflow
+    prepares the execution environment (Conda environment creation, minimal
+    \LaTeX{} installation, optional swap configuration), installs project
+    dependencies, and triggers the appropriate test targets (e.g.,
+    \texttt{make booktests\_parallel\_no\_docker}). This ensures consistent,
+    version-controlled execution across platforms.
+
+    \item \textbf{Parsl controller and workers:} Parsl provisions local or
+    remote executors---processes, threads, or cluster jobs---and schedules
+    notebook tests as independent tasks. This enables parallel execution with
+    configurable concurrency limits, resource profiles, and executor backends.
+
+    \item \textbf{Testbook runner and artifact collection:} Each worker
+    executes its assigned notebook tests through Testbook. Outputs, execution
+    logs, error traces, generated figures, and notebook artifacts with executed
+    cells are returned to the Parsl controller and uploaded by CI for
+    inspection, provenance tracking, and debugging.
+\end{itemize}
+
+Key features of the harness include pinned Conda environment specifications for
+reproducibility, customizable Parsl executors (local, HPC, or cloud), timeout
+and retry policies for handling flaky or long-running tests, and centralized
+logging to streamline diagnosis of failures. Together, these components provide
+a robust framework for scalable, automated validation of computational
+notebooks.
+
 
 \subsection{Results}
 
-To determine a baseline speedup with a subset of notebooks, we saw a speedup. 
-After increasing our test coverage, which expanded our work to look for syntax errors in more notebooks, we now see a 4.4x speedup, which is consistent with our expectations, as shown in Figure~\ref{fig:parsl_speedup}. 
 
-\begin{figure}[htbp]
+To establish a performance baseline, we first measured the wall‐clock time
+required to execute a representative subset of demo notebooks sequentially.
+After extending test coverage to include syntax-validation checks and
+additional notebooks, we repeated the experiment under the parallel
+Testbook–Parsl workflow. Across these configurations, we observed a consistent
+\textbf{3.0-fold speedup}, demonstrating that notebook-based tests parallelize
+cleanly and benefit substantially from concurrent execution. The overall trend
+is illustrated in Figure~\ref{fig:parsl_speedup}.
+
+\begin{figure}[t]
     \centering
-    \includegraphics[width=.7\textwidth]{booktests/parsl_speedup_chart_no_x_lines.png}
-    \caption{Parallel testing speedup using Parsl against sequential execution of tests.}
+    \includegraphics[width=1\textwidth]{booktests/parsl_speedup.png}
+    \caption{Speedup achieved by running Testbook-based notebook tests under
+    Parsl with four workers compared to sequential execution.}
     \label{fig:parsl_speedup}
 \end{figure}
 
-\scnote{Add details about architecture where the speedup were observed.}
+All tests were executed on a Linux system (AMD64 architecture) with 16~CPU
+cores. When run in continuous integration, the workflow executes the same test
+suite on the GitHub Actions \texttt{ubuntu-latest} runner. Users may reproduce
+the parallel Testbook workflow locally by running:
+\begin{verbatim}
+make testbook
+\end{verbatim}
+
+\medskip
+\noindent
+Table~\ref{tab:coverage_summary} summarizes the scope of the tested
+notebooks and their corresponding generated test files.
+
+\begin{table}[h]
+\centering
+\caption{Coverage summary for the QMCPy Testbook suite.}
+\label{tab:coverage_summary}
+\begin{tabular}{l r l}
+\hline
+\textbf{Item} & \textbf{Count} & \textbf{Notes} \\
+\hline
+Demo notebooks in \texttt{demos/} & 33 &
+All notebooks in \texttt{demos/} (including subfolders) \\
+Generated test files in \texttt{test/booktests/tb\_*.py} & 32 &
+Each \texttt{tb\_*.py} tests a single demo notebook \\
+Notebooks executed by booktests workflow & 32 &
+Workflow runs the \texttt{make} targets and executes \\ 
+& &  all generated test files (one per notebook) \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Runner configuration notes.}
+\begin{itemize}
+    \item The GitHub \texttt{ubuntu-latest} runner typically provides
+    2~virtual CPUs per job.
+    \item The workflow allocates a 12~GB swap file to mitigate transient
+    memory spikes during notebook execution and reduce the likelihood of
+    out-of-memory failures.
+\end{itemize}
+
+\subsection{CI Tests (from \texttt{.github/workflows/booktests.yml})}
+
+The continuous integration workflow automates the execution of notebook-based
+tests and prepares a controlled environment for reproducible runs. The workflow
+checks out the repository, sets up Miniconda, installs the project’s test
+extras (\texttt{pip install -e .[test]}) along with optional components
+(\texttt{test\_torch}, \texttt{test\_gpytorch}, etc.), and creates a 12~GB swap
+file early in the job to reduce out-of-memory failures for notebooks with heavy
+memory demands.
+
+To ensure notebook tests are present and up to date, the workflow invokes
+\texttt{make check\_booktests} and \texttt{make generate\_booktests}, which
+confirm or regenerate \texttt{test/booktests/tb\_*.py} files (one per demo
+notebook). The final step triggers the test target---typically
+\texttt{make booktests\_parallel\_no\_docker} for parallel execution or
+\texttt{make booktests\_no\_docker} for sequential execution. These targets run
+the generated tests via \texttt{pytest}/\texttt{testbook}.
+
+For diagnostics, setting \texttt{ACTIONS\_STEP\_DEBUG: true} increases log
+verbosity. 
+
+Timing and memory usage can be captured by wrapping the \texttt{make} call with
+\texttt{/usr/bin/time -v} and uploading the resulting logs using the
+\texttt{actions/upload-artifact@v4} step.Hksa1siam22
+
+Parallel notebook execution must respect the resource limits of GitHub
+runners, which typically provide only two CPUs. When notebooks request more
+workers (e.g., \texttt{max\_workers = 8}), adapting the code to
+\texttt{max\_workers = min(8, os.cpu\_count() or 1)} ensures compatibility. In
+cases of memory pressure, the workflow may fall back to the sequential
+\texttt{booktests\_no\_docker} target or reduce \texttt{-j} parallelism inside
+the \texttt{Makefile}.
+
+The workflow is readily extensible: caching package installations with
+\texttt{actions/cache} accelerates subsequent runs; notebook outputs and HTML
+artifacts can be uploaded for failure analysis; and a simple CSV timing log in
+\texttt{test/booktests/} can be collected to track notebook performance over
+time.
+
 
 \subsection{Further Work}
 
-Due to the above results, this points to the fact that we should extend our testing to doctest and pytests in Parsl.
+Due to the above results, this indicates that we should extend our testing to doctest and `pytest` in Parsl.
 
-Now, since many people have multi-core processors, we can make our individuals more productive so that our tests can show that no regressions have been introduced faster.
+Now, because many people have multicore processors, we can increase individual productivity so that our tests can demonstrate that no regressions have been introduced.
 
-Last but not least of the feedback on the presentation of this work to the Parsl group would be that the system is very general. This implies that a distributed test system could be interesting for Parsl users to distribute their own test workloads. 
-Also, extending our work to not just test Jupyter notebooks, but also Python-based doctests, adding new testing such as Behavior-Driven Development using Cucumber \cite{cucumber2025}, unit testing using pytest and/or unittest.
+Furthermore, regarding feedback on the presentation to the ParslFest participants, the system is quite general. This suggests a distributed test system could benefit Parsl users by enabling them to distribute their own test workloads.
 
-\scnote{How to apply ``Cucumber tests for Behavior-Driven Development'' in QMCPy?}
-
-\scnote{Add a link to the presentation slides and notebooks}
-
-\scnote{add make testbook and add to readme on running juypter notebook tests}
-
-\scnote{workflow fixing to github actions ask IIT person presentation}
-
-\scnote{alexander culler ( german) lookup nvidia mental images , art owen}
-
-
+Finally, we could expand our work to encompass Python doctests, as well as unit testing using pytest or unittest, in addition to testing Jupyter notebooks.
