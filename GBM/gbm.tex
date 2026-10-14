@@ -1,5 +1,4 @@
-
-\begin{tcolorbox}[title=Quick Start,colback=blue!1,colframe=blue!30!black,breakable]
+\begin{tcolorbox}[title=Example implementation of GBM using QMCPy,colback=blue!1,colframe=blue!30!black,breakable]
 Install the required Python packages:
 %
 \begin{lstlisting}[language=bash,basicstyle=\ttfamily,frame=none,numbers=none]
@@ -55,7 +54,7 @@ pricing \cite{hull2017, ross2014}.
 \subsection{GBM Objects in QMCPy}
 
 GBM in QMCPy inherits from BrownianMotion class \cite{Choi2022,QMCPy2020a}. We
-can create a simple GBM instance and generate sample paths to see the class in
+can instantiate a GBM class and generate sample paths to see the class in
 action; see Listing~\ref{lst:gbm_qmcpy2}:
 
 \lstinputlisting[ style=Python, caption={Generating 4 GBM sample paths evaluated
@@ -142,7 +141,7 @@ sampling; see Listing~\ref{lst:gbm_iid_32}.
 \lstinputlisting[ style=Python, caption={Generate 32 GBM sample paths with IID
     sampling.}, label={lst:gbm_iid_32} ]{GBM/code/gbm_iid_32.py}
 
-Or, to use a low‐discrepancy lattice sampler with the same parameters
+Also, we can use a low‐discrepancy lattice sampler with the same parameters
 (Listing~\ref{lst:gbm_lattice_32}): \lstinputlisting[ style=Python,
 caption={Generate 32 GBM sample paths with lattice sampling.},
 label={lst:gbm_lattice_32} ]{GBM/code/gbm_lattice_32.py}
@@ -203,8 +202,7 @@ Subplots~(\subref{fig:bm_iid}), (\subref{fig:gbm_iid}),
 In this section, we compare QMCPy's GeometricBrownianMotion implementation with
 the industry-standard QuantLib library \cite{quantlib} to validate its accuracy
 and performance. %We use Listing~\ref{lst:quantlib} to generate the QuantLib
-paths.
-The numerical results are summarized in Table~\ref{tab2}. 
+paths. The numerical results are summarized in Table~\ref{tab2}. 
 
 Both libraries produce statistically equivalent GBM simulations that match
 theoretical values. QMCPy typically runs 1.5 to 2 times faster due to vectorized
@@ -215,10 +213,10 @@ high-performance applications. QuantLib remains the industry standard for
 production systems that require comprehensive support for financial modeling and
 risk management.
 
-\lstinputlisting[ style=Python, caption={Function to generate GBM paths with
-    QuantLib.}, label={lst:quantlib} ]{GBM/code/quantlib_util.py}
+{\tiny\input{GBM/outputs/gbm_comparison_table.tex}}
 
-\input{GBM/outputs/gbm_comparison_table.tex}
+\newpage
+\lstinputlisting[style=Python, basicstyle=\footnotesize\ttfamily, caption={Function to generate GBM paths with QuantLib.}, label={lst:quantlib}]{GBM/code/quantlib_util.py}
 
  In Figure~\ref{fig:qmcpy_quantlib_comparison}, the top row shows sample paths:
  QMCPy on the left and QuantLib on the right. The bottom-left panel overlays the
@@ -240,7 +238,7 @@ Table~\ref{tab1}.}
 \label{fig:qmcpy_quantlib_comparison}
 \end{figure}
 
-To evaluate computational efficiency, we conducted comprehensive performance
+The evaluation of computational efficiency was done by creating comprehensive performance
 benchmarks comparing QMCPy and QuantLib across two key scaling dimensions. The
 benchmarks were performed using the \texttt{perfplot} library, which
 automatically handles warm-up, multiple runs, and statistical analysis to ensure
@@ -272,13 +270,31 @@ paths for accurate estimation.
     \label{fig:gbm_performance}
 \end{figure}
 
-To further validate these performance findings, we conducted an extended
+In order to further validate these performance findings, we conducted an extended
 parameter sweep analysis across a broader range of configurations.
 Figure~\ref{fig:gbm_performance2} presents the comprehensive results of this
 analysis, systematically examining performance across varying time steps and
-path counts. The extended benchmarks confirm QMCPy's consistent computational
-advantages and demonstrate robust scaling behavior across the parameter space,
-reinforcing its suitability for high-performance quasi-Monte Carlo applications.
+path counts. 
+\begin{itemize}
+\item \LarysaNote{Regarding accuracy, QMCPy's Sobol sampler generally achieves the lowest mean
+absolute error (MAE), particularly when a larger number of paths are used,
+reaching errors below $10^{-3}$. %QMCPy's Sobol sampler demonstrates remarkable
+%consistency, maintaining relatively stable MAEs across different time steps and
+showing clear convergence improvements with more paths. The lattice sampler also
+provides competitive accuracy, especially with higher path counts. While
+QuantLib's standard uniform IID sampler yields slightly lower MAE for a larger
+number of paths compared to QMCPy's IID sampler, it is notably slower.}
+\item Regarding speed, low-discrepancy samplers like Sobol, lattice, and Halton
+demonstrate superior convergence rates with increasing path counts compared to
+IID methods. With QMCPy, Sobol and lattice samplers offer the best
+speed-accuracy trade-off. QuantLib achieves comparable runtime to QMCPy's faster
+samplers, but without the accuracy benefits. The Halton sampler, while yielding
+the most accurate results, incurs significantly higher computational costs.
+These results highlight QMCPy's quasi-Monte Carlo methods as particularly
+well-suited for applications requiring high accuracy, with Sobol and lattice
+samplers providing an optimal balance of speed and precision for most practical
+scenarios.
+\end{itemize}
 
 \begin{figure}[H]
     \centering
@@ -349,21 +365,61 @@ remain strictly positive (with strict‐positivity checks raising warnings or
 errors if violated).
 
 \bigskip
+\subsection{Conclusions and Future Work}
+
+\begin{comment}
+QMCPy's implementation offers an efficient and generally more accurate method of
+modeling geometric Brownian motion. While QuantLib's standard uniform IID
+sampler yields slightly lower mean error for a larger number of paths and time
+steps than Qmcpy's IID, it is slower in generating a larger number of paths. In
+contrast, Qmcpy's Sobol sampler produces a significantly lower mean error and is
+faster in generating sample paths. We also compared the performance of other
+low-discrepancy samplers available in QMCPy. The IID has the largest mean error
+compared to low-discrepancy samplers, but it has a similar runtime to the
+lattice and Sobol samplers. Halton can reach the lowest mean error among all
+samplers in fewer paths, but it is the slowest. Sobol shows almost constant mean
+error across all time steps and a decreasing mean error for a larger number of
+paths. In the future, we aim to investigate ways to improve the runtime of the
+Halton sampler (Figure \ref{fig:gbm_performance2}).
+\end{comment}
+This blog demonstrates that QMCPy's quasi-Monte Carlo implementations provide
+significant advantages over traditional Monte Carlo methods for modeling
+geometric Brownian motion. QMCPy's approach combines superior numerical accuracy
+with enhanced computational efficiency, making it particularly well-suited for
+high-performance financial modeling applications. 
+
+In the future, we aim to investigate ways to improve the runtime of the Halton
+sampler. For example, we may consider starting with Halton sampling points for
+high accuracy in early iterations, then switch to Sobol for faster convergence
+as sample size increases. It would also be interesting to experiment with
+ensemble sampling by running multiple samplers in parallel and combine the
+results using weighted averaging based on their relative accuracies.
+
 \begin{tcolorbox}[title=Takeaways,colback=blue!1,colframe=blue!30!black]
 To the best of our knowledge, this blog presents the first publicly available
 benchmark comparing QuantLib and QMCPy for Geometric Brownian Motion (GBM)
 simulations. Key takeaways include:
-\begin{itemize}%[topsep=0pt,itemsep=0pt,parsep=0pt,leftmargin=*]
-    \item Flexibility: Change one argument in QMCPy to swap samplers or
-    covariance decompositions.
-    \item Accuracy: QMCPy's GBM matches QuantLib and theoretical moments, with
-    superior numerical accuracy for quasi-Monte Carlo samplers (see
-    Table~\ref{tab2}).
-    \item Speed: Vectorized operations and optimized memory management produce
-    1.5 to 2 times faster path generation in QMCPy than QuantLib.
+\begin{itemize}
+    \item \textbf{Theoretical Validation}: QMCPy's GBM implementation correctly
+    preserves log-normality and matches theoretical moments, providing reliable
+    foundations for financial modeling applications.
+    \item \textbf{QMC Advantage}: Quasi-Monte Carlo methods (Sobol, lattice,
+    Halton) demonstrate superior convergence and accuracy compared to
+    traditional Monte Carlo, with Halton achieving the lowest mean error and
+    Sobol providing consistent performance across scenarios.
+    \item \textbf{Flexibility \& Ease of Use}: Change one argument in QMCPy to
+    swap samplers or covariance decompositions, enabling rapid experimentation
+    and method comparison.
+    \item \textbf{Performance}: Vectorized operations and optimized memory
+    management produce 1.5-2x faster path generation than QuantLib.
+    \item \textbf{Robustness}: Superior numerical stability through PCA
+    decomposition, and comprehensive error handling make QMCPy suitable for both
+    research and practical financial and scientific applications.
 \end{itemize}
 \end{tcolorbox}
 
+\subsection*{Acknowledgments}
+The authors thank Fred Hickernell, Joshua Jay Herman and Jiangrui Kang for their insightful feedback and help with the blog post. 
 %\bibliography{FJH23,FJHown23,main} \begin{thebibliography}{6}
 
 % \bibitem[1]{glasserman2003} Glasserman, P. (2003). \textit{Monte Carlo Methods
