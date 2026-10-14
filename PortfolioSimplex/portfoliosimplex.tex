@@ -73,7 +73,15 @@ as a multiset (a collection that keeps duplicates): each still carries its
 original $1/N$ quadrature weight.
 Deleting duplicates would change the QMC rule.
 
-\paragraph{Does every low-discrepancy (LD) sequence behave alike?}
+Alternatively, Basu and Owen~\cite{basuowen2015} construct low-discrepancy
+(LD) points directly (without mapping points from the unit cube) on triangles using recursive subdivision and rotated
+lattices.  Their work shows how the geometry of the integration domain can
+guide QMC point construction, offering an approach distinct from the
+cube-to-simplex maps used by \code{SimplexUniform}.  Adding these direct
+triangle constructions to QMCPy is possible future work, tracked in
+\href{https://github.com/QMCSoftware/qmcpy/issues/639}{QMCPy issue \#639}.
+
+\paragraph{Does every LD sequence behave alike?}
 The
 \href{https://github.com/QMCSoftware/QMCSoftware/blob/develop/demos/simplex_uniform.ipynb}{SimplexUniform demo}
 validates support and moments and demonstrates all five transformations.  Its
